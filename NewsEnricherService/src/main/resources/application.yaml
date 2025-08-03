@@ -1,0 +1,8 @@
+kafka:
+  bootstrapServers: localhost:9092
+  topic: news-raw
+spark:
+  appName: SparkNewsEnricher
+  master: local[*]
+nerApi:
+  url: http://localhost:5000/enrich

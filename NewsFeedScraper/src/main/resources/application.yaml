@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: NewsFeedScraper
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+app:
+  kafka:
+    topic: news-raw
+  scheduler:
+    rate: 300000
+  news:
+    news-sources:
+      - id: nyt
+        displayName: The New York Times Company
+        feedUrl: https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml
+      - id: bbc
+        displayName: BBC
+        feedUrl: https://feeds.bbci.co.uk/news/rss.xml
+      - id: toi
+        displayName: Times of India
+        feedUrl: https://timesofindia.indiatimes.com/rssfeedstopstories.cms
