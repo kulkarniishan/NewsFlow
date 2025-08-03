@@ -32,6 +32,7 @@ else:
     logger.info("Using CPU")
 
 ner_pipeline = pipeline("ner", model="dslim/bert-base-NER", aggregation_strategy="simple", device=device_id, batch_size=8)
+event_pipeline = pipeline("text-classification", model="joeddav/distilbert-base-uncased-go-emotions-student", device=device_id, batch_size=8)
 
 # === Flask App ===
 app = Flask(__name__)
@@ -63,11 +64,16 @@ def enrich():
 
         try:
             logger.info("Received single text for enrichment")
-            result = ner_pipeline(text)
-            formatted = format_entities(result)
-            logger.info("Successfully enriched single text")
-            return jsonify({"entities": formatted})
+            ner_result = ner_pipeline(text)
+            event_result = event_pipeline(text)
 
+            formatted_ner = format_entities(ner_result)
+            logger.info("Successfully enriched single text")
+            return jsonify({
+                "text": text,
+                "entities": formatted_ner,
+                "events": event_result
+            })
         except Exception as e:
             logger.exception("Error during single-text enrichment")
             return jsonify({"error": str(e)}), 500
@@ -85,16 +91,21 @@ def enrich():
             ds = Dataset.from_dict({"text": texts})
             logger.info("Dataset text column: %s", ds["text"])
             # Process with NER pipeline
-            results = ner_pipeline(texts)
+            ner_results = ner_pipeline(texts)
+            event_results = event_pipeline(texts)
 
-            batch_entities = []
+            batch_output = []
 
-            for text, result in zip(texts, results):
-                formatted = format_entities(result)
-                batch_entities.append({"text": text, "entities": formatted})
+            for text, ner_result, event_result in zip(texts, ner_results, event_results):
+                formatted_ner = format_entities(ner_result)
+                batch_output.append({
+                    "text": text,
+                    "entities": formatted_ner,
+                    "events": event_result
+                })
 
             logger.info("Successfully enriched batch")
-            return jsonify({"batch_entities": batch_entities})
+            return jsonify({"batch": batch_output})
 
         except Exception as e:
             logger.exception("Error during batch-text enrichment")
